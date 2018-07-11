@@ -1,0 +1,772 @@
+---
+title: "Innerwear Analysis - Cleaning & Initial Results"
+output: pdf_document
+---
+
+
+```{r}
+amazon_com <- read.csv("amazon_com.csv", header=TRUE)
+amazon_com2 <- amazon_com
+##CLEANING DATA
+##changing vector type for each object
+amazon_com$product_name <- as.character(amazon_com$product_name)
+amazon_com$mrp <- as.numeric(gsub("\\$", "", amazon_com$mrp))
+amazon_com$price <- as.numeric(gsub("\\$", "", amazon_com$price))
+amazon_com$pdp_url <- as.character(amazon_com$pdp_url)
+amazon_com$brand_name <- as.character(amazon_com$brand_name)
+amazon_com$product_category <- as.character(amazon_com$product_category)
+amazon_com$retailer <- as.character(amazon_com$retailer)
+amazon_com$description <- as.character(amazon_com$description)
+amazon_com$rating <- as.numeric(amazon_com$rating)
+amazon_com$review_count <- as.numeric(amazon_com$review_count)
+amazon_com$style_attributes <- as.character(amazon_com$style_attributes)
+amazon_com$total_sizes <- as.character(amazon_com$total_sizes)
+amazon_com$available_size <- as.character(amazon_com$available_size)
+amazon_com$color <- as.character(amazon_com$color)
+##renaming wrong brand names
+amazon_com$brand_name[amazon_com$brand_name == "Nintendo"] <- "b-temptd"
+amazon_com$brand_name[amazon_com$brand_name == "Compression-Comfort"] <- "Wacoal"
+amazon_com$brand_name[amazon_com$brand_name == "Creative-Motion"] <- "b-temptd"
+amazon_com$brand_name[amazon_com$brand_name == "Fila"] <- "Wacoal"
+amazon_com$brand_name[amazon_com$brand_name == "Lucky-Brand"] <- "Wacoal"
+amazon_com$brand_name[amazon_com$brand_name == "Sexy-Hair"] <- "Wacoal"
+amazon_com$brand_name[amazon_com$brand_name == "ref=w_bl_sl_l_ap_ap_web_2586685011?ie=UTF8&node=2586685011&field-lbr_brands_browse-bin=Calvin+Klein"] <- "Calvin-Klein"
+amazon_com$brand_name[amazon_com$brand_name == "ref=w_bl_sl_l_b_ap_web_2586451011?ie=UTF8&node=2586451011&field-lbr_brands_browse-bin=b.tempt%27d"] <- "b-temptd"
+amazon_com$brand_name[amazon_com$brand_name == "ref=w_bl_sl_l_b_ap_web_2603426011?ie=UTF8&node=2603426011&field-lbr_brands_browse-bin=Wacoal"] <- "Wacoal"
+##There are three brand names coded as "s"
+subset(amazon_com, amazon_com$brand_name=="s")
+##The reference numbers for these three "s" are 936, 10418, 28998, and they are Wacoal, b-temptd and Wacoal respectively.
+amazon_com$brand_name[936] <- "Wacoal"
+amazon_com$brand_name[10418] <- "b-temptd"
+amazon_com$brand_name[28998] <- "Wacoal"
+amazon_com$brand_name[amazon_com$brand_name=="Calvin-Klein"] <- "Calvin Klein"
+amazon_com$brand_name[amazon_com$brand_name=="Hanky-Panky"] <- "Hanky Panky"
+amazon_com$brand_name[amazon_com$brand_name=="Victorias-Secret"] <- "Victoria's Secret"
+##To display the count of brands
+table(amazon_com$brand_name)
+
+##We want to remove any pre-packs, so we can compare individual garments
+table(amazon_com$product_name[grepl("pack", amazon_com$product_name, ignore.case = TRUE)])
+amazon_com <- amazon_com[!grepl("pack", amazon_com$product_name, ignore.case = TRUE),]
+
+##Categorizing types of undergarments
+table(amazon_com$product_name[grepl("Sport Bra", amazon_com$product_name, ignore.case = TRUE)])
+amazon_com$product_category[grepl("Sport Bra", amazon_com$product_name, ignore.case = TRUE)] <- "Sport Bras"
+table(amazon_com$product_name[grepl("tanga", amazon_com$product_name, ignore.case = TRUE)])
+amazon_com$product_category[grepl("tanga", amazon_com$product_name, ignore.case = TRUE)] <- "Thongs"
+table(amazon_com$product_name[grepl("thong", amazon_com$product_name, ignore.case = TRUE)])
+amazon_com$product_category[grepl("thong", amazon_com$product_name, ignore.case = TRUE)] <- "Thongs"
+table(amazon_com$product_name[grepl("bralette", amazon_com$product_name, ignore.case = TRUE)])
+amazon_com$product_category[grepl("bralette", amazon_com$product_name, ignore.case = TRUE)] <- "Bralettes"
+```
+
+
+
+```{r}
+victoriassecret_com <- read.csv("victoriassecret_com.csv", header=TRUE)
+victoriassecret_com2 <- victoriassecret_com
+##To check why we are getting NAs when changing mrp from character to numeric
+head(victoriassecret_com$mrp[is.na(as.numeric(gsub("\\$", "", victoriassecret_com$mrp)))])
+victoriassecret_com$mrp <- gsub("â¡", "", victoriassecret_com$mrp)
+##To check which prices are turning into NAs when changing from character to numeric
+head(victoriassecret_com$mrp[is.na(as.numeric(gsub("\\$", "", victoriassecret_com$mrp)))])
+victoriassecret_com$mrp <- gsub("Rp", "", victoriassecret_com$mrp)
+victoriassecret_com$mrp <- as.numeric(gsub("\\$", "", victoriassecret_com$mrp))
+
+
+##To check why we are getting NAs when changing price from character to numeric
+head(victoriassecret_com$price[is.na(as.numeric(gsub("\\$", "", victoriassecret_com$price)))])
+victoriassecret_com$price[victoriassecret_com$price=="â¡24.769"]
+victoriassecret_com$price <- gsub("â¡", "", victoriassecret_com$price)
+##To check if there are more NAs when changing from character to numeric
+head(victoriassecret_com$price[is.na(as.numeric(gsub("\\$", "", victoriassecret_com$price)))])
+victoriassecret_com$price <- gsub("Rp", "", victoriassecret_com$price)
+victoriassecret_com$price <- as.numeric(gsub("\\$", "", victoriassecret_com$price))
+
+victoriassecret_com$pdp_url <- as.character(victoriassecret_com$pdp_url)
+victoriassecret_com$brand_name <- as.character(victoriassecret_com$brand_name)
+victoriassecret_com$product_name <- as.character(victoriassecret_com$product_name)
+victoriassecret_com$product_category <- as.character(victoriassecret_com$product_category)
+victoriassecret_com$retailer <- as.character(victoriassecret_com$retailer)
+victoriassecret_com$description <- as.character(victoriassecret_com$description)
+victoriassecret_com$rating <- as.numeric(as.character(victoriassecret_com$rating))
+victoriassecret_com$review_count <- as.numeric(victoriassecret_com$review_count)
+victoriassecret_com$style_attributes <- as.character(victoriassecret_com$style_attributes)
+victoriassecret_com$color <- as.character(victoriassecret_com$color)
+
+ggplot(victoriassecret_com, aes(product_category, mrp)) + geom_boxplot()
+max(victoriassecret_com$mrp)
+max(victoriassecret_com$price)
+victoriassecret_com$product_name[victoriassecret_com$mrp==721.448]
+##It looks like only one product "Dream Angels Demi Bra" has this price. It seems like an outlier and a wrong price.
+##We want to replace the wrong price and mrp of the "Dream Angels Demi Bra" with the average price for both.
+demibra <- victoriassecret_com[victoriassecret_com$product_name=="Dream Angels Demi Bra",]
+max(demibra$price)
+##The maximum price is $412.118
+demibra <- demibra[!demibra$mrp==721.448,]
+max(demibra$mrp)
+max(demibra$price)
+##Now the max price for both is $62.50 which seems realistic.
+mean(demibra$mrp)
+mean(demibra$price)
+##The average mrp is 53.79, so we will replace 721.448 with $53.79 and the average price is $49.01, and we will replace $412.118
+victoriassecret_com$mrp[victoriassecret_com$mrp==721.448] <- 53.79
+##Double check that all the same product has the price $412.118 which we need to replace.
+data.frame(victoriassecret_com$product_name[victoriassecret_com$price==412.118])
+victoriassecret_com$price[victoriassecret_com$price==412.118] <- 49.01
+
+max(victoriassecret_com$mrp)
+max(victoriassecret_com$price)
+##We have the same issue with the price attribute, where the max price is $543.294
+data.frame(victoriassecret_com$product_name[victoriassecret_com$price==543.294])
+##It looks like the item that has this price is an Easy Push-Up Bra. We will look on victoriasecrect.com to see if this price is realistic. On the website it is on sale for $19.99 and msrp is $42.50. We will see what the average price of this is from the rest of the data we have.
+easypushup <- victoriassecret_com[victoriassecret_com$product_name=="Easy Push-Up Bra",]
+max(easypushup$price)
+max(easypushup$mrp)
+##Both mrp and price have a max value of $543.294
+easypushup <- easypushup[!easypushup$price==543.294,]
+max(easypushup$price)
+max(easypushup$mrp)
+##Now the max price is $474.522, we will remove this as well.
+easypushup <- easypushup[!easypushup$price==474.522,]
+max(easypushup$price)
+max(easypushup$mrp)
+##Now the max price for both is $39.50
+mean(easypushup$price)
+mean(easypushup$mrp)
+##The average price and mrp is $35.40
+##Therefore, we will replace the price $543.294 with $39.50 and the price $474.522 with $35.40
+victoriassecret_com$price[victoriassecret_com$price==543.294] <- 39.50
+victoriassecret_com$mrp[victoriassecret_com$mrp==543.294] <- 39.50
+victoriassecret_com$price[victoriassecret_com$price==474.522] <- 35.40
+victoriassecret_com$mrp[victoriassecret_com$mrp==474.522] <- 35.40
+max(victoriassecret_com$price)
+##We have another max price point that does not seem realistic, at $343.857
+data.frame(victoriassecret_com$product_name[victoriassecret_com$price==343.857])
+table(victoriassecret_com$price[victoriassecret_com$product_name=="PINK NEW! Lace Lightly Lined Halter Bralette"])
+##We can see that there are only two price points in this product name, $25.00 and $343.857, so we will change them all to 25.00
+victoriassecret_com$price[victoriassecret_com$price==343.857] <- 25.000
+##We want to clean up the category because it is too redundant and similar to the product name
+table(victoriassecret_com$product_category)
+head(data.frame(victoriassecret_com$product_name,victoriassecret_com$product_category))
+##First we want to remove Socks from the category
+subset(victoriassecret_com$product_name, grepl("Sock", victoriassecret_com$product_category))
+victoriassecret_com <- subset(victoriassecret_com, !grepl("Sock", victoriassecret_com$product_category))
+victoriassecret_com <- victoriassecret_com[!victoriassecret_com$product_category=="Glass Water Bottle",]
+victoriassecret_com <- victoriassecret_com[!victoriassecret_com$product_category=="Baseball Hat",]
+victoriassecret_com <- victoriassecret_com[!victoriassecret_com$product_category=="Campus Water Bottle",]
+victoriassecret_com <- victoriassecret_com[!victoriassecret_com$product_category=="Coconut Waters Travel Kit",]
+victoriassecret_com <- victoriassecret_com[!victoriassecret_com$product_category=="Washed Canvas Tote",]
+victoriassecret_com <- victoriassecret_com[!victoriassecret_com$product_category=="Sport Duffle",]
+
+
+
+r <- regexpr("https://www.victoriassecret.com/(.*?)/(.*?)", victoriassecret_com$pdp_url)
+extcategory <- regmatches(victoriassecret_com$pdp_url, r)
+extcategory <- gsub("https://www.victoriassecret.com/", "", extcategory)
+victoriassecret_com$product_category <- sub("/.*", "", extcategory)
+ggplot(victoriassecret_com, aes(product_category, mrp)) + geom_boxplot()
+##There seems to be an outlier in the "panties" column in the max mrp
+max(victoriassecret_com$mrp[victoriassecret_com$product_category=="Panties"])
+victoriassecret_com$product_name[victoriassecret_com$mrp==116.911]
+victoriassecret_com$mrp[victoriassecret_com$product_name=="Cotton Lingerie NEW! String Bikini Panty"]
+##It looks like this price should be $8.50, like the rest of the objects.
+victoriassecret_com$mrp[victoriassecret_com$mrp==116.911] <- 8.500 
+max(victoriassecret_com$price[victoriassecret_com$product_category=="Panties"])
+##It looks like it's the same for the price field
+victoriassecret_com$product_name[victoriassecret_com$price==116.911]
+victoriassecret_com$price[victoriassecret_com$product_name=="Cotton Lingerie NEW! String Bikini Panty"]
+victoriassecret_com$price[victoriassecret_com$price==116.911] <- 8.500
+
+
+##We know that the product_cateogry "pink" is actually a brand name, so if we take a look at the brand name, it is already referenced there. This means we will have to further categorize this portion. 
+table(victoriassecret_com$brand_name[victoriassecret_com$product_category=="pink"])
+table(victoriassecret_com$brand_name)
+##There are 110751 items with the brand pink
+table(victoriassecret_com$pdp_url[victoriassecret_com$product_category=="pink"])
+##It looks like after the word /pink/ there is more information which is categorized.
+r <- regexpr("https://www.victoriassecret.com/pink/(.*?)/(.*?)", victoriassecret_com$pdp_url)
+extcategory <- regmatches(victoriassecret_com$pdp_url, r)
+table(extcategory)
+##There are 4 categories within the product_category pink, all-bras, apparel-activewear (which we will remove), panties, shop-all-swim (which we will remove)
+extcategory <- gsub("https://www.victoriassecret.com/pink/", "", extcategory)
+victoriassecret_com$product_category[victoriassecret_com$product_category=="pink"] <- sub("/.*", "", extcategory)
+table(victoriassecret_com$product_category[victoriassecret_com$brand_name=="Victoria's Secret Pink"])
+##We will remove all swimwear and activewear products, because we're only interested in the undergardments.
+victoriassecret_com <- victoriassecret_com[!victoriassecret_com$product_category=="shop-all-swim",]
+victoriassecret_com <- victoriassecret_com[!victoriassecret_com$product_category=="apparel-activewear",]
+table(victoriassecret_com$product_name[victoriassecret_com$product_category=="victorias-secret-sport"])
+##It looks like all of the items in the victorias-secret-sport are sport bras. We will change accordingly.
+victoriassecret_com$brand_name[victoriassecret_com$product_category=="victorias-secret-sport"] <- "Victoria Sport"
+victoriassecret_com$product_category[victoriassecret_com$product_category=="bras"] <- "Bras"
+victoriassecret_com$product_category[victoriassecret_com$product_category=="lingerie"] <- "Lingerie"
+victoriassecret_com$product_category[victoriassecret_com$product_category=="panties"] <- "Panties"
+victoriassecret_com$product_category[victoriassecret_com$product_category=="all-bras"] <- "Bras"
+##We want to see if there are any "sport bra" or "bralette" still in the bra category
+table(victoriassecret_com$product_name[victoriassecret_com$product_category=="Bras"])
+##It looks like there are some special characters Â which we want to remove
+victoriassecret_com$product_name <- gsub("Â", "", victoriassecret_com$product_name)
+victoriassecret_com$product_category[grepl("bra", victoriassecret_com$product_name, ignore.case = TRUE)] <- "Bras"
+table(victoriassecret_com$product_name[victoriassecret_com$product_category=="Panties"])
+##There are still a few items that are uncategorized under the "panties" field like, "halter" which should be under bra
+victoriassecret_com$product_category[grepl("halter", victoriassecret_com$product_name, ignore.case = TRUE)] <- "Bras"
+victoriassecret_com$product_category[grepl("bralette", victoriassecret_com$product_name, ignore.case = TRUE)] <- "Bralettes"
+victoriassecret_com$product_category[grepl("Sport Bra", victoriassecret_com$product_name, ignore.case = TRUE)] <- "Sport Bras"
+victoriassecret_com$product_category[grepl("Sports Bra", victoriassecret_com$product_name, ignore.case = TRUE)] <- "Sport Bras"
+victoriassecret_com$product_category[grepl("thong", victoriassecret_com$product_name, ignore.case = TRUE)] <- "Thongs"
+victoriassecret_com$product_category[grepl("v-string", victoriassecret_com$product_name, ignore.case = TRUE)] <- "Thongs"
+victoriassecret_com$product_category[grepl("garter belt", victoriassecret_com$product_name, ignore.case = TRUE)] <- "Lingerie"
+
+
+
+```
+
+
+```{r}
+calvinklein_com <- read.csv("calvinklein_com.csv", header=TRUE)
+calvinklein_com2 <- calvinklein_com
+calvinklein_com$product_name <- as.character(calvinklein_com$product_name)
+##To check if changing the class will result in NA coercion
+head(calvinklein_com$mrp[is.na(as.numeric(gsub("\\$", "", calvinklein_com$mrp)))])
+calvinklein_com$mrp <- as.numeric(gsub("\\$", "", calvinklein_com$mrp))
+##To check if changing the class will result in NA coercion
+head(calvinklein_com$price[is.na(as.numeric(gsub("\\$", "", calvinklein_com$price)))])
+##To remove everything before the $ character, since there are two prices in a few lines
+calvinklein_com$price <- as.numeric(gsub(".*\\$", "", calvinklein_com$price))
+calvinklein_com$pdp_url <- as.character(calvinklein_com$pdp_url)
+calvinklein_com$brand_name <- as.character(calvinklein_com$brand_name)
+calvinklein_com$product_category <- as.character(calvinklein_com$product_category)
+calvinklein_com$retailer <- as.character(calvinklein_com$retailer)
+calvinklein_com$description <- as.character(calvinklein_com$description)
+summary(calvinklein_com$rating)
+calvinklein_com$rating <- as.character(calvinklein_com$rating)
+calvinklein_com$rating <- as.numeric(calvinklein_com$rating)
+summary(calvinklein_com$review_count)
+calvinklein_com$review_count <- as.character(calvinklein_com$review_count)
+calvinklein_com$review_count <- as.numeric(calvinklein_com$review_count)
+calvinklein_com$style_attributes <- as.character(calvinklein_com$style_attributes)
+calvinklein_com$color <- as.character(calvinklein_com$color)
+##find outliers at the max level price points
+max(calvinklein_com$price)
+calvinklein_com$product_name[calvinklein_com$price == 72]
+calvinklein_com$product_category[calvinklein_com$price == 72]
+table(calvinklein_com$product_category)
+##remove sleepwear category from product_cateogry (there are 291 products)
+calvinklein_com <- calvinklein_com[!calvinklein_com$product_category=="Sleepwear",]
+##we will also remove socks and Panty Sets since we do not have this in other data sets
+calvinklein_com <- calvinklein_com[!calvinklein_com$product_category=="Socks",]
+calvinklein_com <- calvinklein_com[!calvinklein_com$product_category=="Panty Sets",]
+calvinklein_com$product_category[calvinklein_com$product_category=="3 FOR 33 PANTY ESSENTIALS"] <- "Panties"
+table(calvinklein_com$product_name[calvinklein_com$product_category=="Bras"])
+##There are bralettes under the category Bras
+table(calvinklein_com$product_name[calvinklein_com$product_category=="Bralettes"])
+##There are also bras under bralettes and thongs and hipsters...
+calvinklein_com$product_category[grepl("thong", calvinklein_com$product_name, ignore.case = TRUE)] <- "Thongs"
+calvinklein_com$product_category[grepl("bra", calvinklein_com$product_name, ignore.case = TRUE)] <- "Bras"
+calvinklein_com$product_category[grepl("bralette", calvinklein_com$product_name, ignore.case = TRUE)] <- "Bralettes"
+table(calvinklein_com$product_name[calvinklein_com$product_category=="Bralettes"])
+##There are a few bottoms that have to be removed and some tops
+calvinklein_com$product_name[grepl("bandeau", calvinklein_com$product_name, ignore.case = TRUE)]
+calvinklein_com$product_category[grepl("bandeau", calvinklein_com$product_name, ignore.case = TRUE)] <- "Bras"
+calvinklein_com$product_category[grepl("bikini", calvinklein_com$product_name, ignore.case = TRUE)] <- "Panties"
+calvinklein_com <- calvinklein_com[!calvinklein_com$product_name=="modern cotton scoopneck long sleeve top",]
+calvinklein_com$product_category[grepl("hipster", calvinklein_com$product_name, ignore.case = TRUE)] <- "Panties"
+table(calvinklein_com$product_name[grepl("short", calvinklein_com$product_name, ignore.case = TRUE)])
+calvinklein_com$product_category[grepl("short", calvinklein_com$product_name, ignore.case = TRUE)] <- "Panties"
+
+```
+
+
+```{r}
+hankypanky_com <- read.csv("hankypanky_com.csv", header=TRUE)
+hankypanky_com2 <- hankypanky_com
+hankypanky_com$product_name <- as.character(hankypanky_com$product_name)
+head(hankypanky_com$mrp[is.na(as.numeric(gsub("\\$", "", hankypanky_com$mrp)))])
+##There are no NAs caused by coercion
+hankypanky_com$mrp <- as.numeric(gsub("\\$", "", hankypanky_com$mrp))
+head(hankypanky_com$price[is.na(as.numeric(gsub("\\$", "", hankypanky_com$price)))])
+##There are no NAs caused by coercion
+hankypanky_com$price <- as.numeric(gsub("\\$", "", hankypanky_com$price))
+hankypanky_com$pdp_url <- as.character(hankypanky_com$pdp_url)
+hankypanky_com$brand_name <- as.character(hankypanky_com$brand_name)
+hankypanky_com$product_category <- as.character(hankypanky_com$product_category)
+hankypanky_com$retailer <- as.character(hankypanky_com$retailer)
+hankypanky_com$description <- as.character(hankypanky_com$description)
+hankypanky_com$rating <- as.numeric(as.character(hankypanky_com$rating))
+hankypanky_com$review_count <- as.numeric(hankypanky_com$review_count)
+hankypanky_com$style_attributes <- as.character(hankypanky_com$style_attributes)
+hankypanky_com$color <- as.character(hankypanky_com$color)
+hankypanky_com$brand_name[hankypanky_com$brand_name=="HankyPanky"] <- "Hanky Panky"
+ggplot(hankypanky_com, aes(brand_name, mrp)) + geom_boxplot()
+ggplot(hankypanky_com, aes(brand_name, price)) + geom_boxplot()
+##removing outlier in the price field
+max(hankypanky_com$price)
+hankypanky_com$product_name[hankypanky_com$price==615]
+hankypanky_com <- hankypanky_com[!hankypanky_com$price==615,]
+max(hankypanky_com$price)
+hankypanky_com$product_name[hankypanky_com$price == 300]
+hankypanky_com <- hankypanky_com[!hankypanky_com$price == 300,]
+max(hankypanky_com$price)
+hankypanky_com$product_name[hankypanky_com$price == 295]
+hankypanky_com <- hankypanky_com[!hankypanky_com$price == 295,]
+ggplot(hankypanky_com, aes(product_category, mrp)) + geom_boxplot()
+##Find all items containing the word "sock" and remove them
+subset(hankypanky_com$product_name, grepl("Sock", hankypanky_com$product_name))
+hankypanky_com <- subset(hankypanky_com, !grepl("Sock", hankypanky_com$product_name))
+hankypanky_com <- hankypanky_com[!grepl("gift set", hankypanky_com$product_name, ignore.case = TRUE),]
+hankypanky_com <- hankypanky_com[!grepl("2 pack", hankypanky_com$product_name, ignore.case = TRUE),]
+hankypanky_com$product_category[grepl("bra\\>", hankypanky_com$product_name, ignore.case = TRUE)] <- "Bras"
+hankypanky_com$product_category[grepl("bralette", hankypanky_com$product_name, ignore.case = TRUE)] <- "Bralettes"
+hankypanky_com$product_category[grepl("thong", hankypanky_com$product_name, ignore.case = TRUE)] <- "Thongs"
+hankypanky_com$product_category[grepl("g-string", hankypanky_com$product_name, ignore.case = TRUE)] <- "Thongs"
+hankypanky_com$product_category[grepl("v-kini", hankypanky_com$product_name, ignore.case = TRUE)] <- "Panties"
+hankypanky_com$product_category[grepl("bikini", hankypanky_com$product_name, ignore.case = TRUE)] <- "Panties"
+hankypanky_com$product_category[grepl("brief", hankypanky_com$product_name, ignore.case = TRUE)] <- "Panties"
+hankypanky_com$product_category[grepl("hipster", hankypanky_com$product_name, ignore.case = TRUE)] <- "Panties"
+hankypanky_com$product_category[grepl("boyshort", hankypanky_com$product_name, ignore.case = TRUE)] <- "Panties"
+hankypanky_com <- hankypanky_com[!grepl("pajama", hankypanky_com$product_name, ignore.case = TRUE),]
+hankypanky_com <- hankypanky_com[!grepl("sleep", hankypanky_com$product_name, ignore.case = TRUE),]
+hankypanky_com$product_category[hankypanky_com$product_category=="Collections"] <- "Lingerie"
+hankypanky_com <- hankypanky_com[!grepl("Lingerie Wash Bag", hankypanky_com$product_name, ignore.case = TRUE),]
+hankypanky_com$product_category[hankypanky_com$product_name=="Star Spangled Lined Bandeau"] <- "Bras"
+##All that's left in the Bras-and-tops category are Lingerie items
+hankypanky_com$product_category[hankypanky_com$product_category=="Bras-and-tops"] <- "Lingerie"
+```
+
+
+```{r}
+shop_nordstrom_com <- read.csv("shop_nordstrom_com.csv", header=TRUE)
+shop_nordstrom_com2 <- shop_nordstrom_com
+shop_nordstrom_com$product_name <- as.character(shop_nordstrom_com$product_name)
+head(shop_nordstrom_com$mrp[is.na(as.numeric(gsub("\\$", "", shop_nordstrom_com$mrp)))])
+shop_nordstrom_com$pdp_url <- as.character(shop_nordstrom_com$pdp_url)
+shop_nordstrom_com$pdp_url[shop_nordstrom_com$mrp == "\\â"]
+shop_nordstrom_com$pdp_url[grep("\\â", shop_nordstrom_com$mrp)]
+##After checking which items have the special characters â in the mrp column (creating two different prices), we only see two items. hanky-panky-ali-high-neck-bralette/4665272 and hanky-panky-retro-thong/299984 which is $23.00 (when checking the link and going to the item page.)
+shop_nordstrom_com$mrp <- gsub("â.*", "", shop_nordstrom_com$mrp)
+shop_nordstrom_com$mrp <- as.numeric(gsub("\\$", "", shop_nordstrom_com$mrp))
+head(shop_nordstrom_com$price[is.na(as.numeric(gsub("\\$", "", shop_nordstrom_com$price)))])
+##Sampe problem with price
+##Remove everything after the characters â
+shop_nordstrom_com$price <- gsub("â.*", "", shop_nordstrom_com$price)
+shop_nordstrom_com$price <- as.numeric(gsub("\\$", "", shop_nordstrom_com$price))
+shop_nordstrom_com$brand_name <- as.character(shop_nordstrom_com$brand_name)
+shop_nordstrom_com$product_category <- as.character(shop_nordstrom_com$product_category)
+shop_nordstrom_com$retailer <- as.character(shop_nordstrom_com$retailer)
+shop_nordstrom_com$description <- as.character(shop_nordstrom_com$description)
+shop_nordstrom_com$rating <- as.numeric(as.character(shop_nordstrom_com$rating))
+shop_nordstrom_com$review_count <- as.numeric(shop_nordstrom_com$review_count)
+shop_nordstrom_com$style_attributes <- as.character(shop_nordstrom_com$style_attributes)
+shop_nordstrom_com$color <- as.character(shop_nordstrom_com$color)
+#renaming brands to match all others
+shop_nordstrom_com$brand_name[shop_nordstrom_com$brand_name=="B.TEMPT'D BY WACOAL"] <- "b-temptd"
+shop_nordstrom_com$brand_name[shop_nordstrom_com$brand_name=="CALVIN KLEIN"] <- "Calvin Klein"
+shop_nordstrom_com$brand_name[shop_nordstrom_com$brand_name=="HANKY PANKY"] <- "Hanky Panky"
+shop_nordstrom_com$brand_name[shop_nordstrom_com$brand_name=="NORDSTROM LINGERIE"] <- "Nordstrom
+Lingerie"
+shop_nordstrom_com$brand_name[shop_nordstrom_com$brand_name=="WACOAL"] <- "Wacoal"
+shop_nordstrom_com$product_category[grepl("thong", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Thongs"
+shop_nordstrom_com$product_category[grepl("tanga", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Thongs"
+shop_nordstrom_com$product_category[grepl("g-string", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Thongs"
+shop_nordstrom_com$product_category[shop_nordstrom_com$product_category=="Bridal Lingerie"] <- "Lingerie"
+shop_nordstrom_com$product_category[shop_nordstrom_com$product_category=="Sexy Lingerie"] <- "Lingerie"
+shop_nordstrom_com$product_category[shop_nordstrom_com$product_category=="Skin-Tone Lingerie"] <- "Lingerie"
+shop_nordstrom_com$product_category[shop_nordstrom_com$product_category=="Women's Panties"] <- "Panties"
+shop_nordstrom_com$product_category[grepl("bikini", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Panties"
+shop_nordstrom_com$product_category[grepl("panty", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Panties"
+shop_nordstrom_com$product_category[grepl("boyshorts", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Panties"
+shop_nordstrom_com$product_category[grepl("briefs", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Panties"
+shop_nordstrom_com$product_category[grepl("hipster", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Panties"
+shop_nordstrom_com$product_category[grepl("bandeau", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Bras"
+shop_nordstrom_com$product_category[grepl("bra", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Bras"
+shop_nordstrom_com$product_category[grepl("Sports Bra", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Sport Bras"
+shop_nordstrom_com$product_category[grepl("Bralette", shop_nordstrom_com$product_name, ignore.case = TRUE)] <- "Bralettes"
+table(shop_nordstrom_com$product_name[shop_nordstrom_com$product_category=="Lingerie"])
+##Breast Petals and Adhesive Silicone Cups, Keepsake Bridal Box & 'NO84787' Push-Up Gel Pads are accessoreis not Lingerie
+shop_nordstrom_com <- shop_nordstrom_com[!grepl("Breast Petals", shop_nordstrom_com$product_name, ignore.case=TRUE),]
+shop_nordstrom_com <- shop_nordstrom_com[!grepl("Adhesive Silicone Cups", shop_nordstrom_com$product_name, ignore.case=TRUE),]
+shop_nordstrom_com <- shop_nordstrom_com[!grepl("Keepsake Bridal Box", shop_nordstrom_com$product_name, ignore.case=TRUE),]
+shop_nordstrom_com <- shop_nordstrom_com[!grepl("'NO84787' Push-Up Gel Pads", shop_nordstrom_com$product_name, ignore.case=TRUE),]
+
+```
+
+
+```{r}
+macys_com <- read.csv("macys_com.csv", header=TRUE)
+macys_com2 <- macys_com
+##CLEANING DATA
+##Changing vector type for each brand
+macys_com$product_name <- as.character(macys_com$product_name)
+macys_com$mrp <- as.numeric(gsub("\\$", "", macys_com$mrp))
+macys_com$price <- as.numeric(gsub("\\$", "", macys_com$price))
+macys_com$pdp_url <- as.character(macys_com$pdp_url)
+macys_com$brand_name <- as.character(macys_com$brand_name)
+macys_com$product_category <- as.character(macys_com$product_category)
+
+macys_com$retailer <- as.character(macys_com$retailer)
+macys_com$description <- as.character(macys_com$description)
+macys_com$rating <- as.numeric(as.character(macys_com$rating))
+macys_com$review_count <- as.numeric(macys_com$review_count)
+macys_com$style_attributes <- as.character(macys_com$style_attributes)
+
+macys_com$color <- as.character(macys_com$color)
+
+##renaming wrong brand names
+macys_com$brand_name[macys_com$brand_name == "b.tempt'd"] <- "b-temptd"
+macys_com$brand_name[macys_com$brand_name == "b.tempt'd by Wacoal"] <- "b-temptd"
+macys_com$brand_name[macys_com$brand_name == "Calvin Klein Modern Cotton"] <- "Calvin Klein"
+macys_com$brand_name[macys_com$brand_name == "Calvin Klein Performance"] <- "Calvin Klein"
+macys_com$product_name[macys_com$product_category=="Women - Lingerie & Shapewear - Bras"]
+macys_com$product_category <- gsub("Women - Lingerie & Shapewear - ", "", macys_com$product_category)
+table(macys_com$product_category)
+macys_com$product_category[grepl("bra", macys_com$product_name, ignore.case = TRUE)] <- "Bras"
+##There are a few bras that are "Sports Bra" which we will rename the category
+grep("Sports Bra", macys_com$product_name, value = TRUE)
+macys_com$product_category[grep("Sports Bra", macys_com$product_name, ignore.case = TRUE)] <- "Sport Bras"
+macys_com$product_category[grep("bralette", macys_com$product_name, ignore.case = TRUE)] <- "Bralettes"
+macys_com$product_category[grep("thong", macys_com$product_name, ignore.case = TRUE)] <- "Thongs"
+table(macys_com$product_category)
+##We will remove Lingerie Sets
+macys_com <- macys_com[!macys_com$product_category=="Lingerie Sets",]
+##Remove packs from the dataset
+table(macys_com$product_name[grepl("pack", macys_com$product_name, ignore.case = TRUE)])
+macys_com <- macys_com[!grepl("pack", macys_com$product_name, ignore.case = TRUE),]
+table(macys_com$product_name[grepl("bikini", macys_com$product_name, ignore.case = TRUE)])
+##We will remove "Bralette & Bikini" sets from the dataset
+macys_com$product_name[grepl("Bralette & Bikini", macys_com$product_name, ignore.case = TRUE)]
+macys_com <- macys_com[!grepl("Bralette & Bikini", macys_com$product_name, ignore.case = TRUE),]
+macys_com$product_name[grepl("Bralette and Bikini", macys_com$product_name, ignore.case = TRUE)]
+macys_com <- macys_com[!grepl("Bralette and Bikini", macys_com$product_name, ignore.case = TRUE),]
+table(macys_com$product_name[grepl("Bra & Bikini", macys_com$product_name, ignore.case = TRUE)])
+macys_com <- macys_com[!grepl("Bra & Bikini", macys_com$product_name, ignore.case = TRUE),]
+table(macys_com$product_name[grepl("Bra and Bikini", macys_com$product_name, ignore.case = TRUE)])
+macys_com <- macys_com[!grepl("Bra and Bikini", macys_com$product_name, ignore.case = TRUE),]
+table(macys_com$product_name[grepl("Bra & Hipster", macys_com$product_name, ignore.case = TRUE)])
+macys_com <- macys_com[!grepl("Bra & Hipster", macys_com$product_name, ignore.case = TRUE),]
+table(macys_com$product_name[grepl("Bralette & Hipster", macys_com$product_name, ignore.case = TRUE)])
+macys_com <- macys_com[!grepl("Bralette & Hipster", macys_com$product_name, ignore.case = TRUE),]
+table(macys_com$product_name[grepl("Bralette and Boyshort", macys_com$product_name, ignore.case = TRUE)])
+macys_com <- macys_com[!grepl("Bralette and Boyshort", macys_com$product_name, ignore.case = TRUE),]
+table(macys_com$product_name[grepl("Bra and High Cut Brief", macys_com$product_name, ignore.case = TRUE)])
+macys_com <- macys_com[!grepl("Bra and High Cut Brief", macys_com$product_name, ignore.case = TRUE),]
+
+macys_com$product_category[grepl("Bikini", macys_com$product_name, ignore.case = TRUE)] <- "Panties"
+macys_com$product_category[grepl("Hipster", macys_com$product_name, ignore.case = TRUE)] <- "Panties"
+macys_com$product_category[grepl("Boyshort", macys_com$product_name, ignore.case = TRUE)] <- "Panties"
+table(macys_com$product_name[grepl("g-string", macys_com$product_name, ignore.case = TRUE)])
+##G-String belongs under Thong and Babydoll belongs under Lingerie
+macys_com$product_category[grepl("g-string", macys_com$product_name, ignore.case = TRUE)] <- "Thongs"
+macys_com$product_category[grepl("babydoll", macys_com$product_name, ignore.case = TRUE)] <- "Lingerie"
+table(macys_com$product_name[grepl("Brief", macys_com$product_name, ignore.case = FALSE)])
+##We did not ignore the case here because there is a Bodybrief which is lingerie
+macys_com$product_category[grepl("Brief", macys_com$product_name, ignore.case = FALSE)] <- "Panties"
+table(macys_com$product_name[grepl("Vikini", macys_com$product_name, ignore.case = TRUE)])
+macys_com$product_category[grepl("Vikini", macys_com$product_name, ignore.case = TRUE)] <- "Panties"
+macys_com$product_category[grepl("Tanga", macys_com$product_name, ignore.case = TRUE)] <- "Thongs"
+macys_com <- macys_com[!grepl("Tanga and Garter Belt", macys_com$product_name, ignore.case = TRUE),]
+table(macys_com$product_name[grepl("Balconette", macys_com$product_name, ignore.case = TRUE)])
+macys_com$product_category[grepl("Balconette", macys_com$product_name, ignore.case = TRUE)] <- "Bras"
+table(macys_com$product_name[grepl("Pajama", macys_com$product_name, ignore.case = TRUE)])
+macys_com <- macys_com[!grepl("Pajama", macys_com$product_name, ignore.case = TRUE),]
+macys_com <- macys_com[!grepl("Hoodie", macys_com$product_name, ignore.case = TRUE),]
+macys_com <- macys_com[!grepl("Pant", macys_com$product_name, ignore.case = TRUE),]
+macys_com$product_category[grepl("Cheekini", macys_com$product_name, ignore.case = TRUE)] <- "Panties"
+macys_com$product_category[macys_com$product_category=="Bridal Lingerie"] <- "Lingerie"
+macys_com$product_category[macys_com$product_category=="Sexy Lingerie"] <- "Lingerie"
+macys_com$product_category[macys_com$product_category=="Designer Lingerie"] <- "Lingerie"
+macys_com$product_category[grepl("garter", macys_com$product_name, ignore.case = TRUE)] <- "Lingerie"
+
+
+```
+
+```{r}
+us_topshop_com <- read.csv("us_topshop_com.csv", header=TRUE)
+us_topshop_com2 <- us_topshop_com
+##CLEANING DATA
+##Changing vector type for each brand
+us_topshop_com$brand_name <- as.character(us_topshop_com$brand_name)
+##There are some extra "\t" "\n" and "Now" in the mrp column
+us_topshop_com$mrp <- gsub("\t", "", us_topshop_com$mrp)
+us_topshop_com$mrp <- gsub("\n", "", us_topshop_com$mrp)
+us_topshop_com$mrp <- gsub("Now.*", "", us_topshop_com$mrp)
+us_topshop_com$mrp <- gsub("\\s", "", us_topshop_com$mrp)
+us_topshop_com$mrp <- gsub("\\Â", "", us_topshop_com$mrp)
+us_topshop_com$mrp <- as.numeric(gsub("\\$", "", us_topshop_com$mrp))
+
+us_topshop_com$price <- gsub("\t", "", us_topshop_com$price)
+us_topshop_com$price <- gsub("\n", "", us_topshop_com$price)
+us_topshop_com$price <- gsub("Now.*", "", us_topshop_com$price)
+us_topshop_com$price <-gsub("\\s", "", us_topshop_com$price)
+us_topshop_com$price <-gsub("\\Â", "", us_topshop_com$price)
+us_topshop_com$price <- as.numeric(gsub("\\$", "", us_topshop_com$price))
+
+us_topshop_com$pdp_url <- as.character(us_topshop_com$pdp_url)
+us_topshop_com$product_category <- as.character(us_topshop_com$product_category)
+us_topshop_com$retailer <- as.character(us_topshop_com$retailer)
+us_topshop_com$description <- as.character(us_topshop_com$description)
+us_topshop_com$rating <- as.numeric(as.character(us_topshop_com$rating))
+us_topshop_com$review_count <- as.numeric(us_topshop_com$review_count)
+us_topshop_com$style_attributes <- as.character(us_topshop_com$style_attributes)
+us_topshop_com$color <- as.character(us_topshop_com$color)
+
+us_topshop_com$brand_name[us_topshop_com$brand_name=="US TOPSHOP"] <- "Topshop Lingerie"
+table(us_topshop_com$product_name)
+##It looks like there are other brands which we would need to remove in order to compare properly.
+##We will look up anything that has the word "by" because this is what indicates it is by a brand
+table(subset(us_topshop_com$product_name, grepl("by", us_topshop_com$product_name, ignore.case = TRUE)))
+##We will only keep the brands that we need, like Calvin Klein
+grep("Calvin Klein", us_topshop_com$product_name, value=TRUE)
+us_topshop_com$brand_name[grep("Calvin Klein", us_topshop_com$product_name)] <- "Calvin Klein"
+##Now we have to remove the words "by Calvin Klein" from the product_name
+us_topshop_com$product_name <- gsub(" by Calvin Klein", "", us_topshop_com$product_name)
+##There is also "by TOPSHOP BRIDE" which we will have to change the category to bridal lingerie
+grep("TOPSHOP BRIDE", us_topshop_com$product_name, value = TRUE)
+us_topshop_com$product_category[grep("TOPSHOP BRIDE", us_topshop_com$product_name)] <- "bridal lingerie"
+us_topshop_com$product_name <- gsub(" by TOPSHOP BRIDE", "", us_topshop_com$product_name)
+us_topshop_com <- us_topshop_com[!grepl("by", us_topshop_com$product_name, ignore.case = TRUE),]
+##We will have to rename all Bras to bras category
+us_topshop_com$product_category[grep("Bra", us_topshop_com$product_name, ignore.case = TRUE)] <- "bra"
+us_topshop_com$product_name[us_topshop_com$product_category=="Lingerie"]
+##It looks like there are some bodysuits that we can remove
+us_topshop_com <- us_topshop_com[!grepl("Bodysuit", us_topshop_com$product_name, ignore.case = TRUE),]
+##We can also remove multi pack
+us_topshop_com <- us_topshop_com[!grepl("multi pack", us_topshop_com$product_name, ignore.case = TRUE),]
+##We will also remove 3 pack from the list
+us_topshop_com <- us_topshop_com[!grepl("3 pack", us_topshop_com$product_name, ignore.case = TRUE),]
+us_topshop_com[us_topshop_com$product_name=="All Over Lace Body",]
+##Lets plot the product category to see if there are any outliers in the mrp
+ggplot(us_topshop_com, aes(product_category, mrp)) + geom_boxplot()
+max(us_topshop_com$mrp[us_topshop_com$product_category=="bra"])
+us_topshop_com$product_name[us_topshop_com$mrp==75]
+##It looks like it's only a bra called Somedays Lovin' Bra. After looking for this on the webiste, it looks like Somedays is a brand. We will have to remove this.
+us_topshop_com$product_name[grepl("Somedays", us_topshop_com$product_name, ignore.case = TRUE)]
+us_topshop_com <- us_topshop_com[!grepl("Somedays", us_topshop_com$product_name, ignore.case = TRUE),]
+ggplot(us_topshop_com, aes(product_category, mrp)) + geom_boxplot()
+##There are still a few outliers in the Lingerie category
+max(us_topshop_com$mrp[us_topshop_com$product_category=="Lingerie"])
+us_topshop_com[us_topshop_com$mrp==65,]
+##This looks like it's a bodysuit, which we will remove
+us_topshop_com <- us_topshop_com[!us_topshop_com$mrp==65,]
+table(us_topshop_com$product_name[us_topshop_com$product_category=="Lingerie"])
+##"All Over Lace Body" also seems like a bodysuit
+us_topshop_com <- us_topshop_com[!us_topshop_com$product_name=="All Over Lace Body",]
+us_topshop_com$product_category[us_topshop_com$product_category=="Lingerie"] <- "Panties"
+us_topshop_com$product_category[grepl("thong", us_topshop_com$product_name, ignore.case = TRUE)] <- "Thongs"
+us_topshop_com$product_category[us_topshop_com$product_category=="bridal lingerie"] <- "Lingerie"
+us_topshop_com$product_category[us_topshop_com$product_category=="bra"] <- "Bras"
+us_topshop_com$product_category[grepl("knickers", us_topshop_com$product_name, ignore.case = TRUE)] <- "Panties"
+us_topshop_com$product_category[grepl("bralet", us_topshop_com$product_name, ignore.case = TRUE)] <- "Bralettes"
+table(us_topshop_com$product_name[grepl("sporty.*bra$", us_topshop_com$product_name, ignore.case = TRUE)])
+us_topshop_com$product_category[grepl("sporty.*bra$", us_topshop_com$product_name, ignore.case = TRUE)] <- "Sport Bras"
+
+```
+
+```{r}
+btemptd_wacoal_com <- read.csv("btemptd_com.csv", header=TRUE)
+btemptd_wacoal_com2 <- btemptd_wacoal_com
+btemptd_wacoal_com$product_name <- as.character(btemptd_wacoal_com$product_name)
+head(btemptd_wacoal_com$mrp[is.na(as.numeric(gsub("\\$", "", btemptd_wacoal_com$mrp)))])
+btemptd_wacoal_com$mrp <- as.numeric(gsub("\\$", "", btemptd_wacoal_com$mrp))
+head(btemptd_wacoal_com$price[is.na(as.numeric(gsub("\\$", "", btemptd_wacoal_com$price)))])
+btemptd_wacoal_com$price <- as.numeric(gsub("\\$", "", btemptd_wacoal_com$price))
+btemptd_wacoal_com$pdp_url <- as.character(btemptd_wacoal_com$pdp_url)
+btemptd_wacoal_com$brand_name <- as.character(btemptd_wacoal_com$brand_name)
+btemptd_wacoal_com$product_category <- as.character(btemptd_wacoal_com$product_category)
+btemptd_wacoal_com$retailer <- as.character(btemptd_wacoal_com$retailer)
+btemptd_wacoal_com$description <- as.character(btemptd_wacoal_com$description)
+summary(btemptd_wacoal_com$rating)
+##All ratings are NULL so we will convert them to NA
+btemptd_wacoal_com$rating <- as.character(btemptd_wacoal_com$rating)
+btemptd_wacoal_com$rating <- as.numeric(btemptd_wacoal_com$rating)
+##To confirm that everything has been converted to NA
+summary(btemptd_wacoal_com$rating)
+summary(btemptd_wacoal_com$review_count)
+##There are no ratings, so the rating count is NULL
+btemptd_wacoal_com$review_count <- as.character(btemptd_wacoal_com$review_count)
+btemptd_wacoal_com$review_count <- as.numeric(btemptd_wacoal_com$review_count)
+##To confirm that everything has been converted to NA
+summary(btemptd_wacoal_com$review_count)
+table(btemptd_wacoal_com$product_name[btemptd_wacoal_com$product_category=="COLLECTIONS"])
+##We will categorize all "Chemise" and "Garter Belt" items as Lingerie
+table(btemptd_wacoal_com$product_name[grepl("Chemise", btemptd_wacoal_com$product_name, ignore.case = TRUE)])
+btemptd_wacoal_com$product_category[grepl("Chemise", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Lingerie"
+table(btemptd_wacoal_com$product_name[grepl("Garter Belt", btemptd_wacoal_com$product_name, ignore.case = TRUE)])
+
+
+table(btemptd_wacoal_com$product_name[btemptd_wacoal_com$product_category=="COLLECTIONS"])
+##We want to remove anything that says "Packaged" since we only want to compare individual products
+btemptd_wacoal_com$product_category[btemptd_wacoal_com$product_category=="BRAS AND BRALETTES"] <- "Bras"
+btemptd_wacoal_com$product_category[btemptd_wacoal_com$product_category=="PANTIES"] <- "Panties"
+btemptd_wacoal_com <- btemptd_wacoal_com[!grepl("Packaged", btemptd_wacoal_com$product_name, ignore.case = TRUE),]
+btemptd_wacoal_com$product_category[grepl("bra", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Bras"
+btemptd_wacoal_com$product_category[grepl("sport bra", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Sport Bras"
+btemptd_wacoal_com$product_category[grepl("bralette", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Bralettes"
+btemptd_wacoal_com$product_category[grepl("bandeau", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Bras"
+btemptd_wacoal_com$product_category[grepl("thong", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Thongs"
+btemptd_wacoal_com$product_category[grepl("tanga", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Thongs"
+btemptd_wacoal_com$product_category[grepl("bikini", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Panties"
+btemptd_wacoal_com$product_category[grepl("garter belt", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Lingerie"
+btemptd_wacoal_com$product_category[grepl("boyshort", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Panties"
+btemptd_wacoal_com$product_category[grepl("hipster", btemptd_wacoal_com$product_name, ignore.case = TRUE)] <- "Panties"
+
+
+
+```
+
+```{r}
+
+##remove the total sizes and available size from all dataframes, for this analysis
+##We will not use Calvin Klein and B-Tempted for the initial analysis because they have no ratings
+
+combined_clean_data <- merge(amazon_com,hankypanky_com, all = TRUE)
+combined_clean_data <- merge(combined_clean_data, macys_com, all = TRUE)
+combined_clean_data <- merge(combined_clean_data, shop_nordstrom_com, all = TRUE)
+combined_clean_data <- merge(combined_clean_data, us_topshop_com, all = TRUE)
+combined_clean_data <- merge(combined_clean_data, victoriassecret_com, all = TRUE)
+combined_clean_data$total_sizes <- NULL
+combined_clean_data$available_size <- NULL
+```
+
+Initial Analysis
+
+```{r}
+ggplot(combined_clean_data, aes(brand_name, mrp)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90))
+```
+We can see that Hanky Panky has the most variety of expensive products, but on average Wacoal is the most expensive brand. Nordstrom Lingerie is the least epensive on average, then Topshop. This is not surprising, as they're private labels (this is where retailers can make more margin). Most of the brands do not exceed $50 for lingerie.
+
+```{r}
+ggplot(combined_clean_data, aes(brand_name, mrp, fill=product_category)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90))
+```
+If we further dig into the information by product category, we can see that Lingerie is the most expensive category within the innewear. Thongs are the lowest priced category. Sport Bras are similar in pricing accross all brands, except Topshop Lingerie, where it is lower priced. Bras and Lingerie have the widest price range within the commodity.
+Hanky Panky has the highest priced thongs, as high as 160 dollars. The next price point below Hanky Panky would be Calvin Klein at $125
+
+```{r}
+ggplot(combined_clean_data, aes(brand_name, price, fill=retailer)) + geom_bar(stat = "identity", position = position_dodge()) + theme(axis.text.x = element_text(angle = 90))
+```
+Here we can see that Hanky Panky, on their webiste, has the highest priced product, but Amazon has the lowest priced, compared to Macy's and Nordstrom. Amazon's prices for lingerie do not go above $80, and Victoria's Secret is priced at almost twice as much as Victoria's Secret Pink and Victoria Sport. Wacoal is roughly the same price across Amazon, Macy's and Nordstrom.
+We can also see which brands are carried by which retailer in this graph. b-temptd and Wacoal are carried by three of the same retailers, Amazon, Macy's and Nordstrom, which is not a surprise since the brands are owned by the same company. We can visually see that b-temptd is about half of the price of Wacoal. Nordstrom Lingerie is a little bit below the price of Wacoal lingerie.
+
+```{r}
+ggplot(combined_clean_data, aes(x=rating, fill=product_category)) + geom_density(alpha=.3) + ggtitle("Rating by Category") 
+```
+Bras have the most ratings but are mainly a little less than 4.5 rating. 
+Thongs have the best ratings.
+Sport Bras have a lot of ratings, but weak between 3-4.
+
+```{r}
+ggplot(amazon_com, aes(x=rating, fill=product_category)) + geom_density(alpha=.3) + ggtitle("Amazon - Rating by Category")
+```
+On the Amazon website, most ratings are for Sport Bras and are about a 4.3 rating.
+Panties are between 4.4 and 4.6 rating.
+Bralettes is the only category that has gotten low ratings.
+```{r}
+ggplot(hankypanky_com, aes(x=rating, fill=product_category)) + geom_density(alpha=.3) + ggtitle("Hanky Panky - Rating by Category")
+```
+On the Hanky Panky website, Thongs and Panties have the highest and most ratings. However, there are a few panties that have a 3.5 rating.
+Lingerie has mostly gotten a 5 rating.
+
+```{r}
+ggplot(macys_com, aes(x=rating, fill=product_category)) + geom_density(alpha=.3) + ggtitle("Macy's - Rating by Category")
+```
+There are not enough ratings in the Macy's dataset to analyze this information properly.
+
+```{r}
+ggplot(shop_nordstrom_com, aes(x=rating, fill=product_category)) + geom_density(alpha=.3) + ggtitle("Nordstrom - Rating by Category")
+```
+There are not enough ratings in the Nordstrom dataset to analyze this information properly.
+
+```{r}
+ggplot(us_topshop_com, aes(x=rating, fill=product_category)) + geom_density(alpha=.3) + ggtitle("US Topshop - Rating by Category")
+```
+There are not enough ratings in the Topshop dataset to analyze this information properly.
+
+```{r}
+ggplot(victoriassecret_com, aes(x=rating, fill=product_category)) + geom_density(alpha=.3) + ggtitle("Victoria's Secret - Rating by Category")
+```
+There are not enough ratings in the Victoria's Secret dataset to analyze this information properly.
+
+
+```{r}
+
+amazon_com_nobrand <- amazon_com
+amazon_com_nocategory <- amazon_com
+amazon_com_nobrand$brand_name <- NULL
+amazon_com_nocategory$product_category <- NULL
+
+ggplot(amazon_com, aes(x=mrp, y=price, colour=brand_name)) + geom_point(data=amazon_com_nobrand, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ brand_name) + guides(colour=FALSE) + theme_bw() + ggtitle("Amazon - Manufacturer Retail Price VS. Sale Price by Brand Name")
+```
+Using this plot we can see how the MRP (Manufacturer's Retail Price) and price (selling price) are coorelated. This will tell us if the retailers are selling the brands at the correct prices (either above or on sale).
+
+It looks like none of the brands are being sold above MRP, however Wacoal is the most discounted on Amazon, even the high priced items. They do not seem to go below $20.
+Calvin Klein is also heavily discounted, but lower priced items, which are under $50.
+b-temptd is discounted at a $39-42 price point, as low as almost 10 dollars.
+Victoria's Secret is following the MRP, which might mean that Victoria's Secret controls it's business with Amazon.
+Hanky Panky has a very small assortment on Amazon and for the most part it follows the MRP.
+
+```{r}
+ggplot(amazon_com, aes(x=mrp, y=price, colour=product_category)) + geom_point(data=amazon_com_nocategory, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ product_category) + guides(colour=FALSE) + theme_bw() + ggtitle("Amazon - Manufacturer Retail Price VS. Sale Price by Category")
+```
+This graph shows which commodity is on sale the most at Amazon.
+Bralettes are very discounted, which could mean that the category is losing momentum.
+Bras have a wide price range but are also heavily discounted. 
+Sport Bras are discounted at the $65 price point, which could mean that this is the price cap for this category.
+
+
+```{r}
+hankypanky_com_nocategory <- hankypanky_com
+hankypanky_com_nocategory$product_category <- NULL
+
+ggplot(hankypanky_com, aes(x=mrp, y=price, colour=product_category)) + geom_point(data=hankypanky_com_nocategory, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ product_category) + guides(colour=FALSE) + theme_bw() + ggtitle("Hanky Panky - Manufacturer Retail Price VS. Sale Price")
+```
+
+```{r}
+macys_com_nobrand <- macys_com
+macys_com_nocategory <- macys_com
+macys_com_nobrand$brand_name <- NULL
+macys_com_nocategory$product_category <- NULL
+
+ggplot(macys_com, aes(x=mrp, y=price, colour=brand_name)) + geom_point(data=macys_com_nobrand, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ brand_name) + guides(colour=FALSE) + theme_bw() + ggtitle("Macy's - Manufacturer Retail Price VS. Sale Price by Brand Name")
+```
+
+```{r}
+ggplot(macys_com, aes(x=mrp, y=price, colour=product_category)) + geom_point(data=macys_com_nocategory, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ product_category) + guides(colour=FALSE) + theme_bw() + ggtitle("Macy's - Manufacturer Retail Price VS. Sale Price by Category")
+```
+
+```{r}
+shop_nordstrom_com_nobrand <- shop_nordstrom_com
+shop_nordstrom_com_nocategory <- shop_nordstrom_com
+shop_nordstrom_com_nobrand$brand_name <- NULL
+shop_nordstrom_com_nocategory$product_category <- NULL
+```
+
+```{r}
+ggplot(shop_nordstrom_com, aes(x=mrp, y=price, colour=brand_name)) + geom_point(data=shop_nordstrom_com_nobrand, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ brand_name) + guides(colour=FALSE) + theme_bw() + ggtitle("Nordstrom - Manufacturer Retail Price VS. Sale Price by Brand Name")
+```
+
+```{r}
+ggplot(shop_nordstrom_com, aes(x=mrp, y=price, colour=product_category)) + geom_point(data=shop_nordstrom_com_nocategory, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ product_category) + guides(colour=FALSE) + theme_bw() + ggtitle("Nordstrom - Manufacturer Retail Price VS. Sale Price by Category")
+```
+```{r}
+us_topshop_com_nobrand <- us_topshop_com
+us_topshop_com_nocategory <- us_topshop_com
+us_topshop_com_nobrand$brand_name <- NULL
+us_topshop_com_nocategory$product_category <- NULL
+
+ggplot(us_topshop_com, aes(x=mrp, y=price, colour=brand_name)) + geom_point(data=us_topshop_com_nobrand, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ brand_name) + guides(colour=FALSE) + theme_bw() + ggtitle("US Topshop - Manufacturer Retail Price VS. Sale Price by Brand Name")
+```
+```{r}
+ggplot(us_topshop_com, aes(x=mrp, y=price, colour=product_category)) + geom_point(data=us_topshop_com_nocategory, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ product_category) + guides(colour=FALSE) + theme_bw() + ggtitle("US Topshop - Manufacturer Retail Price VS. Sale Price by Category")
+```
+
+```{r}
+victoriassecret_com_nobrand <- victoriassecret_com
+victoriassecret_com_nobrand$brand_name <- NULL
+victoriassecret_com_nocategory <- victoriassecret_com
+victoriassecret_com_nocategory$product_category <- NULL
+
+ggplot(victoriassecret_com, aes(x=mrp, y=price, colour=brand_name)) + geom_point(data=victoriassecret_com_nobrand, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ brand_name) + guides(colour=FALSE) + theme_bw() + ggtitle("Victoria's Secret - Manufacturer Retail Price VS. Sale Price by Brand Name")
+```
+
+```{r}
+ggplot(victoriassecret_com, aes(x=mrp, y=price, colour=product_category)) + geom_point(data=victoriassecret_com_nocategory, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ product_category) + guides(colour=FALSE) + theme_bw() + ggtitle("Victoria's Secret - Manufacturer Retail Price VS. Sale Price by Category")
+```
