@@ -770,3 +770,257 @@ ggplot(victoriassecret_com, aes(x=mrp, y=price, colour=brand_name)) + geom_point
 ```{r}
 ggplot(victoriassecret_com, aes(x=mrp, y=price, colour=product_category)) + geom_point(data=victoriassecret_com_nocategory, colour="grey", alpha=.2) + geom_point() + facet_wrap(~ product_category) + guides(colour=FALSE) + theme_bw() + ggtitle("Victoria's Secret - Manufacturer Retail Price VS. Sale Price by Category")
 ```
+```{r}
+##Separate dataset for topic modelling
+cleandata_topicmodelling <- combined_clean_data[,c(1,4,6,8)]
+##Check to see how many unique attrbutes there are
+sapply(cleandata_topicmodelling, function(x) length(unique(x)))
+##remove dupclicate URLs, becauase there is only one product name, category and description per URL.
+cleandata_topicmodelling <- cleandata_topicmodelling[!duplicated(cleandata_topicmodelling$pdp_url), ]
+##Remove special characters like Â in the description field and any numbers
+library(stringr)
+cleandata_topicmodelling$description <- tolower(cleandata_topicmodelling$description)
+cleandata_topicmodelling$description <- str_replace_all(cleandata_topicmodelling$description, "â", "")
+cleandata_topicmodelling$description <- str_replace_all(cleandata_topicmodelling$description, "ã", "")
+cleandata_topicmodelling$description <- gsub('[[:digit:]]+', '', cleandata_topicmodelling$description)
+
+library(dplyr)
+clean_productname <- data_frame(url = cleandata_topicmodelling$pdp_url, product_name = cleandata_topicmodelling$product_name)
+
+clean_desc <- data_frame(url = cleandata_topicmodelling$pdp_url, desc = cleandata_topicmodelling$description)
+
+clean_categories <- data_frame(url = cleandata_topicmodelling$pdp_url, category = cleandata_topicmodelling$product_category)
+
+library(tidytext)
+##remove stop words from product name and descriptions
+clean_productname <- clean_productname %>% 
+  unnest_tokens(word, product_name) %>%
+  anti_join(stop_words)
+
+clean_desc <- clean_desc %>%
+  unnest_tokens(word, desc) %>%
+  anti_join(stop_words)
+
+
+##Most common words in the product name
+clean_productname %>% 
+  count(word, sort = TRUE)
+
+##Most common words in the descriptions
+clean_desc %>%
+  count(word, sort = TRUE)
+
+##Most common categories
+clean_categories %>%
+  group_by(category) %>%
+  count(sort = TRUE)
+
+##Change all categories to uppercase
+clean_categories <- clean_categories %>%
+  mutate(category = toupper(category))
+  
+library(widyr)
+##How many pairs of words occur together in a product name and description
+productname_word_pairs <- clean_productname %>%
+  pairwise_count(word, url, sort = TRUE, upper = FALSE)
+
+desc_word_pairs <- clean_desc %>%
+  pairwise_count(word, url, sort = TRUE, upper = FALSE)
+
+
+
+```
+
+```{r}
+##Graphing the relationship between words
+library(igraph)
+library(ggraph)
+
+set.seed(1234)
+
+productname_word_pairs %>%
+  filter(n >= 250) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "cyan4") +
+  geom_node_point(size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+
+
+```
+
+```{r}
+desc_word_pairs %>%
+  filter(n >= 400) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, edge_width = n), edge_colour = "darkred") +
+  geom_node_point(size = 3) +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+```
+
+A few clusters between machine wash and calvin klein logo, lightly lined.
+There are also strong connection betwen imported, fabric, lift, hook, details, adjustable, underwire and support.
+
+```{r}
+##Calculating TF-IDF for description fields
+desc_tf_idf <- clean_desc %>%
+  count(url, word, sort = TRUE) %>%
+  ungroup() %>%
+  bind_tf_idf(word, url, n)
+
+##What are the highest tf-idf words in the description field
+desc_tf_idf %>%
+  arrange(-tf_idf)
+```
+We have run into an issue here, both n and term frequency are equal to 1 for these terms, meaning these were descriptions fields that only had a single word in them. If a description field only contains one word, the tf-idf algorithm will think it is a very important word.
+
+```{r}
+##Connecting description fields to categories
+desc_tf_idf <- full_join(desc_tf_idf, clean_categories, by = "url")
+
+#Plotting some of the most important words by category, as measured by tf-idf.
+desc_tf_idf %>%
+  filter(!near(tf, 1)) %>%
+  filter(category %in% c("BRALETTES", "BRAS", "LINGERIE", "PANTIES", "SPORT BRAS", "THONGS")) %>%
+  arrange(desc(tf_idf)) %>%
+  group_by(category) %>%
+  distinct(word, category, .keep_all = TRUE) %>%
+  top_n(15, tf_idf) %>%
+  ungroup() %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>%
+  ggplot(aes(word, tf_idf, fill = category)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~category, ncol = 3, scales = "free") +
+  coord_flip() +
+  labs(title = "Highest tf-idf words in Innerwear dataset description fields", x = NULL, y = "tf-idf")
+```
+
+```{r}
+my_stop_words <- bind_rows(stop_words,
+                           data_frame(word = "ve", 
+                                      lexicon = "custom"))
+
+word_counts <- clean_desc %>%
+  anti_join(my_stop_words) %>%
+  count(url, word, sort = TRUE) %>%
+  ungroup()
+
+desc_dtm <- word_counts %>%
+  cast_dtm(url, word, n)
+
+```
+
+```{r}
+##Topic modelling
+library(topicmodels)
+
+desc_lda <- LDA(desc_dtm, k = 20, control = list(seed = 1234))
+
+tidy_lda <- tidy(desc_lda)
+
+tidy_lda
+```
+
+The beta column tells us the probability of that term being generated from that topic.
+Some are very low and some are not so low.
+
+```{r}
+##Top 8 terms for each topic
+top_terms <- tidy_lda %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms
+```
+
+```{r}
+##Visualize the model
+top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  group_by(topic, term) %>%
+  arrange(desc(beta)) %>%
+  ungroup() %>%
+  mutate(term = factor(paste(term, topic, sep = "__"),
+                       levels = rev(paste(term, topic, sep = "__")))) %>%
+  ggplot(aes(term, beta, fill = as.factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_discrete(labels = function(x) gsub("__.+$", "", x)) +
+  labs(title = "Top 10 terms in LDA topic",
+       x = NULL, y = expression(beta)) +
+  facet_wrap(~ topic, ncol = 4, scales = "free")
+  
+```
+
+The dominant word "bra" is in these description texts. We can see a few different topics like sports and support belonging to sport bras, and lace, rise and waistband belonging to panties.
+Let's see if the topics are associated with the categories.
+
+```{r}
+lda_gamma <- tidy(desc_lda, matrix = "gamma")
+
+lda_gamma
+```
+```{r}
+ggplot(lda_gamma, aes(gamma)) +
+  geom_histogram() +
+  scale_y_log10() +
+  labs(title = "Distribution of probabilities for all topics",
+       y = "Number of documents", x = expression(gamma))
+```
+
+There are many values near zero, which means that there are many documents that do not belong in each topic. However, there are some values that are near gamma = 1; these are documents that do belong in those topics.
+
+Lets see how probablities are distributed within each topic.
+```{r}
+ggplot(lda_gamma, aes(gamma, fill = as.factor(topic))) +
+  geom_histogram(show.legend = FALSE) +
+  facet_wrap(~ topic, ncol = 4) +
+  scale_y_log10() +
+  labs(title = "Distribution of probability for each topic",
+       y = "Number of documents", x = expression(gamma))
+```
+
+There are no topics that are fully sorted into a specific topic, however, here are a few that are sorted closer to the topic, which are 8, 14, 20 and as well as 9 and 12 are significant.
+
+Let's connect these topic models with the categories and see what relationships we can find.
+```{r}
+lda_gamma <- full_join(lda_gamma, clean_categories, by = c("document" = "url"))
+
+lda_gamma
+```
+
+Now lets only keep the document-topic entries that have probablities greater than 0.9.
+```{r}
+top_categories <- lda_gamma %>%
+  filter(gamma > 0.9) %>%
+  count(topic, category, sort = TRUE)
+
+top_categories
+```
+
+What are the top categories for each topic?
+```{r}
+top_categories %>%
+  group_by(topic) %>%
+  top_n(5, n) %>%
+  group_by(topic, category) %>%
+  arrange(desc(n)) %>%
+  ungroup() %>%
+  mutate(category = factor(paste(category, topic, sep = "__"),
+                           levels = rev(paste(category, topic, sep = "__")))) %>%
+  ggplot(aes(category, n, fill = as.factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  labs(title = "Top categories for each LDA topic",
+       x = NULL, y = "Number of documents") +
+  coord_flip() +
+  scale_x_discrete(labels = function(x) gsub("__.+$", "", x)) +
+  facet_wrap(~ topic, ncol = 4, scales = "free")
+
+```
